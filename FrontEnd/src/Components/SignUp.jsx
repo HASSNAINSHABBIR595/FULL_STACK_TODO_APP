@@ -1,0 +1,134 @@
+// =======================
+// IMPORTS
+// =======================
+
+// import React from "react";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+// =======================
+// COMPONENT: SIGN UP
+// =======================
+
+const SignUp = () => {
+  // =======================
+  // STATE MANAGEMENT
+  // =======================
+
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const navigate = useNavigate();
+  // =======================
+  // SIGN UP HANDLE FUNCTION HERE
+  // =======================
+  const HandleSignUp = async () => {
+    try {
+      let res = await axios.post("http://localhost:3200/signup", userData, {
+        withCredentials: true,
+      });
+
+      setUserData({ name: "", email: "", password: "" });
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem("isLoggedIn")) {
+      navigate("/");
+    }
+  }, []);
+  // =======================
+  // UI RENDER
+  // =======================
+
+  return (
+    // =======================
+    // MAIN CONTAINER
+    // =======================
+
+    <div className="flex justify-center items-center h-screen">
+      {/* =======================
+          CARD CONTAINER
+      ======================= */}
+      <div className="lg:w-120 w-1/2 h-130 bg-zinc-300 rounded-2xl flex flex-col justify-start gap-10 p-10 items-center">
+        {/* =======================
+            FORM SECTION
+        ======================= */}
+        <div>
+          {/* =======================
+              NAME INPUT
+          ======================= */}
+          <label className="text-xl font-medium text-zinc-700">NAME</label>
+          <input
+            value={userData.name}
+            onChange={(event) =>
+              setUserData({ ...userData, name: event.target.value })
+            }
+            type="text"
+            placeholder="Enter Your Name"
+            className="bg-white w-full h-15 px-10 my-2 rounded-2xl outline-zinc-400"
+          />
+
+          {/* =======================
+              EMAIL INPUT
+          ======================= */}
+          <label className="text-xl font-medium text-zinc-700">EMAIL</label>
+          <input
+            value={userData.email}
+            onChange={(event) =>
+              setUserData({ ...userData, email: event.target.value })
+            }
+            type="email"
+            placeholder="Enter Your Email"
+            className="bg-white w-full h-15 px-10 my-2 rounded-2xl outline-zinc-400"
+          />
+
+          {/* =======================
+              PASSWORD INPUT
+          ======================= */}
+          <label className="text-xl font-medium text-zinc-700">PASSWORD</label>
+          <input
+            value={userData.password}
+            onChange={(event) =>
+              setUserData({ ...userData, password: event.target.value })
+            }
+            type="password"
+            placeholder="Enter Your Password"
+            className="bg-white w-full h-15 px-10 my-2 rounded-2xl outline-zinc-400"
+          />
+
+          {/* =======================
+              SUBMIT BUTTON
+          ======================= */}
+          <button
+            onClick={HandleSignUp}
+            className="mt-5 bg-gray-800 hover:bg-gray-700 active:scale-[0.98] w-full h-15 rounded-2xl outline-zinc-300 text-xl text-white"
+          >
+            Sign Up
+          </button>
+        </div>
+
+        {/* =======================
+            NAVIGATION LINK
+        ======================= */}
+        <Link
+          className="text-xl text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-xl"
+          to="/login"
+        >
+          Login
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+// =======================
+// EXPORT COMPONENT
+// =======================
+
+export default SignUp;
