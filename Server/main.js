@@ -26,7 +26,7 @@ app.use(cookieParser());
 dotenv.config();
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "gentle-possibility-production-3ad7.up.railway.app",
     credentials: true,
   }),
 );
