@@ -40,7 +40,18 @@ const UpdateTask = () => {
   // =======================
 
   const getListData = async () => {
-    const res = await axios.get(`http://localhost:3200/tasks/${id}`);
+    // GET
+    const res = await axios.get(
+      `https://fullstacktodoapp-production-2b2e.up.railway.app/tasks/${id}`,
+      { withCredentials: true },
+    );
+
+    // PUT — route bhi fix kiya: /update-task/:id
+    await axios.put(
+      `https://fullstacktodoapp-production-2b2e.up.railway.app/update-task/${id}`,
+      taskData,
+      { withCredentials: true },
+    );
 
     // Extracting required fields from response
     const { title, description } = res.data;
@@ -54,7 +65,10 @@ const UpdateTask = () => {
 
   const handleUpdateTask = async () => {
     try {
-      await axios.put(`http://localhost:3200/update-task/${id}`, taskData);
+      await axios.put(
+        `fullstacktodoapp-production-2b2e.up.railway.app/${id}`,
+        taskData,
+      );
 
       // Redirect after update
       navigate("/");

@@ -12,7 +12,9 @@ const Navbar = () => {
   const navigate = useNavigate();
   function LogOut() {
     axios
-      .post("http://localhost:3200/logout", {}, { withCredentials: true })
+      .post("https://fullstacktodoapp-production-2b2e.up.railway.app/logout", {
+        withCredentials: true,
+      })
       .then(() => {
         navigate("/login");
       })

@@ -24,7 +24,7 @@ const AddTask = () => {
   // =======================
 
   const api = axios.create({
-    baseURL: "http://localhost:3200",
+    baseURL: "https://fullstacktodoapp-production-2b2e.up.railway.app",
     withCredentials: true,
   });
 
@@ -63,7 +63,6 @@ const AddTask = () => {
         title: title,
         description: description,
       });
-
       // =======================
       // RESET STATE
       // =======================

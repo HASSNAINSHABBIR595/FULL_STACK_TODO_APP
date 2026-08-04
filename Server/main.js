@@ -26,7 +26,7 @@ app.use(cookieParser());
 dotenv.config();
 app.use(
   cors({
-    origin: "gentle-possibility-production-3ad7.up.railway.app",
+    origin: "https://full-stack-todo-app-black-theta.vercel.app",
     credentials: true,
   }),
 );

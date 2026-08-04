@@ -4,7 +4,7 @@
 
 // import React from "react";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 // =======================
@@ -27,12 +27,13 @@ const SignUp = () => {
   // =======================
   const HandleSignUp = async () => {
     try {
-      let res = await axios.post("http://localhost:3200/signup", userData, {
-        withCredentials: true,
-      });
+      let res = await axios.post(
+        "https://fullstacktodoapp-production-2b2e.up.railway.app/signup",
+        userData,
+        { withCredentials: true },
+      );
       if (res.data.success) {
         navigate("/");
-        setSignUpCheck(true);
       }
       setUserData({ name: "", email: "", password: "" });
     } catch (err) {

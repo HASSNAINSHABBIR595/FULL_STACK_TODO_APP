@@ -24,9 +24,11 @@ const Login = () => {
 
   const HandleLogin = async () => {
     try {
-      let res = await axios.post("http://localhost:3200/login", userData, {
-        withCredentials: true,
-      });
+      let res = await axios.post(
+        "https://fullstacktodoapp-production-2b2e.up.railway.app/login",
+        userData,
+        { withCredentials: true },
+      );
 
       if (res.data.success) {
         navigate("/");

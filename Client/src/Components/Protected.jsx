@@ -12,9 +12,10 @@ const Protected = ({ children }) => {
 
       try {
         console.log("Protected mounted");
-        const res = await axios.get("http://localhost:3200/auth/me", {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
+          { withCredentials: true },
+        );
         console.log("api response:", res);
 
         if (res.data.success) {
