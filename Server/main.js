@@ -10,6 +10,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import dns from "dns";
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 // =======================
 // APP INITIALIZATION
 // =======================
@@ -70,8 +73,8 @@ app.post("/signup", async (req, res) => {
 
     res.cookie("token", Token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     res.send({
       success: true,
@@ -113,8 +116,8 @@ app.post("/login", async (req, res) => {
     // 🍪 cookies
     res.cookie("token", Token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
 
     res.send({
@@ -134,8 +137,8 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
   });
   res.json({ success: true });
 });

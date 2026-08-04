@@ -30,18 +30,15 @@ const SignUp = () => {
       let res = await axios.post("http://localhost:3200/signup", userData, {
         withCredentials: true,
       });
-
+      if (res.data.success) {
+        navigate("/");
+        setSignUpCheck(true);
+      }
       setUserData({ name: "", email: "", password: "" });
     } catch (err) {
       console.log(err.response?.data || err.message);
     }
   };
-
-  useEffect(() => {
-    if (localStorage.getItem("isLoggedIn")) {
-      navigate("/");
-    }
-  }, []);
   // =======================
   // UI RENDER
   // =======================
