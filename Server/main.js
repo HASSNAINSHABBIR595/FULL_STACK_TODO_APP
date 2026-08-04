@@ -26,7 +26,10 @@ app.use(cookieParser());
 dotenv.config();
 app.use(
   cors({
-    origin: "https://full-stack-todo-app-black-theta.vercel.app",
+    origin: [
+      "https://full-stack-todo-app-black-theta.vercel.app",
+      "https://full-stack-todo-mv7f7r4ce-hassnainshabbir595s-projects.vercel.app",
+    ],
     credentials: true,
   }),
 );
