@@ -68,13 +68,13 @@ app.post("/signup", async (req, res) => {
       password: hashedPassword,
     });
 
-    const Token = jwt.sign(
+    const token = jwt.sign(
       { id: newUser._id, email: newUser.email },
       process.env.JWT_SECRET,
       { expiresIn: "5d" },
     );
 
-    res.cookie("token", Token, {
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -82,7 +82,7 @@ app.post("/signup", async (req, res) => {
     res.send({
       success: true,
       message: "Sign up done",
-      Token: Token,
+      token: token,
     });
   } catch (error) {
     res.send({
@@ -110,14 +110,14 @@ app.post("/login", async (req, res) => {
     }
 
     // ✅ Access token
-    const Token = jwt.sign(
+    const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "5d" },
     );
 
     // 🍪 cookies
-    res.cookie("token", Token, {
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -126,7 +126,7 @@ app.post("/login", async (req, res) => {
     res.send({
       success: true,
       message: "Login successful",
-      token: Token, // ✅ fixed
+      token: token, // ✅ fixed
     });
   } catch (err) {
     res.send({

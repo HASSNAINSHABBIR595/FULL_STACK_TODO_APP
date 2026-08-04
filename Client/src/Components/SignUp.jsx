@@ -33,7 +33,7 @@ const SignUp = () => {
         { withCredentials: true },
       );
       if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("token", res.data.token); // 👈 small t
         navigate("/");
       }
       setUserData({ name: "", email: "", password: "" });
