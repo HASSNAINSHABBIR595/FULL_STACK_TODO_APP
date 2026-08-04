@@ -41,7 +41,6 @@ const Protected = ({ children }) => {
   if (loading) return <h2>Checking auth...</h2>;
 
   // ❌ agar check ke baad bhi false
-  if (!isAuth) return <Navigate to="/login" />;
 
   // ✅ allowed
   return children;
