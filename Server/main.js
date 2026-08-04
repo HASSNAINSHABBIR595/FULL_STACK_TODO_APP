@@ -297,4 +297,7 @@ app.get("/tasks/:id", async (req, res) => {
 // =======================
 // SERVER START
 // =======================
-app.listen(3200);
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log("Server running");
+});
