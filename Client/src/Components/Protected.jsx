@@ -8,32 +8,32 @@ const Protected = ({ children }) => {
   useEffect(() => {
     console.log("useEffect running");
     const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      setIsAuth(false);
+      setLoading(false);
+      return;
+    }
 
-        if (!token) {
-          setIsAuth(false);
-          setLoading(false);
-          return;
-        }
-
-        const res = await axios.get(
-          "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          },
-        );
-
-        if (res.data.success) {
-          setIsAuth(true);
-        }
-      } catch (error) {
-        setIsAuth(false);
-      } finally {
-        setLoading(false);
+    const res = await axios.get(
+      "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       }
-    };
+    );
+
+    if (res.data.success) {
+      setIsAuth(true);
+    }
+  } catch (error) {
+    setIsAuth(false);
+  } finally {
+    setLoading(false);
+  }
+};
     checkAuth();
   }, []);
 
@@ -41,6 +41,7 @@ const Protected = ({ children }) => {
   if (loading) return <h2>Checking auth...</h2>;
 
   // ❌ agar check ke baad bhi false
+  if (!isAuth) return <Navigate to="/login" />;
 
   // ✅ allowed
   return children;
