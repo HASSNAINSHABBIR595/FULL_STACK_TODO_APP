@@ -8,22 +8,27 @@ const Protected = ({ children }) => {
   useEffect(() => {
     console.log("useEffect running");
     const checkAuth = async () => {
-      console.log("checkAuth...");
-
       try {
-        console.log("Protected mounted");
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setIsAuth(false);
+          setLoading(false);
+          return;
+        }
+
         const res = await axios.get(
           "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
-          { withCredentials: true },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          },
         );
-        console.log("api response:", res);
 
         if (res.data.success) {
-          console.log("success true");
           setIsAuth(true);
         }
       } catch (error) {
-        console.log(error);
         setIsAuth(false);
       } finally {
         setLoading(false);

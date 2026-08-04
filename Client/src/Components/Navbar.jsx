@@ -12,10 +12,13 @@ const Navbar = () => {
   const navigate = useNavigate();
   function LogOut() {
     axios
-      .post("https://fullstacktodoapp-production-2b2e.up.railway.app/logout", {
-        withCredentials: true,
-      })
+      .post(
+        "https://fullstacktodoapp-production-2b2e.up.railway.app/logout",
+        {},
+        { withCredentials: true },
+      )
       .then(() => {
+        localStorage.removeItem("token"); // 👈 yeh add karo
         navigate("/login");
       })
       .catch((err) => console.log(err));

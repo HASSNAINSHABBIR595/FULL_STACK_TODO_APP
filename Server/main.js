@@ -146,7 +146,6 @@ app.post("/logout", (req, res) => {
   res.json({ success: true });
 });
 // auth route here //
-
 app.get("/auth/me", VerifyJWTToken, async (req, res) => {
   try {
     res.json({ success: true });
@@ -162,7 +161,7 @@ app.get("/auth/me", VerifyJWTToken, async (req, res) => {
 // JWTTOKEN VERIFY HERE //
 //========================
 function VerifyJWTToken(req, res, next) {
-  const token = req.cookies?.token;
+  const token = req.cookies?.token || req.headers?.split(" ")[1];
   if (!token) {
     return res.status(401).json({
       success: false,

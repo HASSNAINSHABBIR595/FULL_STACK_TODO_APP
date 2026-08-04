@@ -18,7 +18,7 @@ const AddTask = () => {
   // =======================
 
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("token");
   // =======================
   // API CONFIGURATION
   // =======================
@@ -26,6 +26,9 @@ const AddTask = () => {
   const api = axios.create({
     baseURL: "https://fullstacktodoapp-production-2b2e.up.railway.app",
     withCredentials: true,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   // =======================
