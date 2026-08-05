@@ -31,9 +31,7 @@ app.use(cookieParser());
 // CORS — trailing slash nahi, exact origins
 // =======================
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://full-stack-todo-app-black-theta.vercel.app",
-  "https://full-stack-todo-mv7f7r4ce-hassnainshabbir595s-projects.vercel.app",
+  "https://full-stack-todo-pohfssjrl-hassnainshabbir595s-projects.vercel.app/",
 ];
 
 app.use(
@@ -243,13 +241,11 @@ app.post("/add-task", VerifyJWTToken, async (req, res) => {
       .json({ success: true, message: "Task added", data: newTask });
   } catch (error) {
     console.error("Add task error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error adding task",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error adding task",
+      error: error.message,
+    });
   }
 });
 
@@ -260,13 +256,11 @@ app.get("/tasks", VerifyJWTToken, async (req, res) => {
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Fetch tasks error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching tasks",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching tasks",
+      error: error.message,
+    });
   }
 });
 
@@ -281,13 +275,11 @@ app.get("/tasks/:id", async (req, res) => {
     res.status(200).json(task);
   } catch (error) {
     console.error("Fetch single task error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching task",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching task",
+      error: error.message,
+    });
   }
 });
 
@@ -307,13 +299,11 @@ app.put("/update-task/:id", async (req, res) => {
       .json({ success: true, message: "Task updated", data: updated });
   } catch (error) {
     console.error("Update task error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error updating task",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error updating task",
+      error: error.message,
+    });
   }
 });
 
@@ -328,13 +318,11 @@ app.delete("/delete-task/:id", async (req, res) => {
     res.status(200).json({ success: true, message: "Task deleted" });
   } catch (error) {
     console.error("Delete task error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting task",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting task",
+      error: error.message,
+    });
   }
 });
 
@@ -353,13 +341,11 @@ app.delete("/multipleDelete", async (req, res) => {
       .json({ success: true, message: `${ids.length} tasks deleted` });
   } catch (err) {
     console.error("Multiple delete error:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting tasks",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting tasks",
+      error: err.message,
+    });
   }
 });
 
@@ -370,13 +356,11 @@ app.delete("/delete-all", async (req, res) => {
     res.status(200).json({ success: true, message: "All tasks deleted" });
   } catch (error) {
     console.error("Delete all error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting all tasks",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting all tasks",
+      error: error.message,
+    });
   }
 });
 
