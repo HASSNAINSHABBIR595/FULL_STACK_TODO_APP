@@ -31,7 +31,7 @@ app.use(cookieParser());
 // CORS — trailing slash nahi, exact origins
 // =======================
 const allowedOrigins = [
-  "https://full-stack-todo-pohfssjrl-hassnainshabbir595s-projects.vercel.app/",
+  "https://full-stack-todo-r6868jove-hassnainshabbir595s-projects.vercel.app/",
 ];
 
 app.use(
