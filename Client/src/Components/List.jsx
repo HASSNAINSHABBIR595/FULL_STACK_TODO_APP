@@ -128,7 +128,7 @@ const List = () => {
       {/* TABLE CONTAINER */}
       <div className="w-full max-w-5xl bg-zinc-100 rounded-xl shadow-2xl shadow-zinc-400 border border-zinc-200 overflow-hidden mt-5">
         <div className="overflow-x-auto w-full">
-          <div className="min-w-[700px] p-5">
+          <div className="min-w-175 p-5">
             {/* TABLE HEADER */}
             <div className="grid grid-cols-[50px_60px_1fr_2fr_80px] gap-3 font-sans mb-3 items-center">
               <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl flex justify-center items-center">

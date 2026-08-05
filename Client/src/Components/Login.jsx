@@ -2,16 +2,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// =======================
-// COMPONENT: LOGIN
-// =======================
 const Login = () => {
   const [userData, setUserData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState("");
   const navigate = useNavigate();
 
-  // Agar pehle se logged in hai toh redirect
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -21,6 +18,7 @@ const Login = () => {
 
   const HandleLogin = async () => {
     setError("");
+    setDebugInfo("");
 
     if (!userData.email.trim() || !userData.password.trim()) {
       setError("Please fill in both email and password");
@@ -32,53 +30,69 @@ const Login = () => {
       const res = await axios.post(
         "https://fullstacktodoapp-production-2b2e.up.railway.app/login",
         userData,
-        { withCredentials: true }, // Cookie receive karne ke liye zaroori
+        { withCredentials: true },
       );
 
-      if (res.data.success) {
-        // Token localStorage mein store karo (Authorization header fallback ke liye)
+      // Debug: exact response dikhao
+      console.log("=== LOGIN RESPONSE ===", res.data);
+      setDebugInfo(JSON.stringify(res.data, null, 2));
+
+      if (res.data.success && res.data.token) {
         localStorage.setItem("token", res.data.token);
-        setUserData({ email: "", password: "" });
-        navigate("/", { replace: true });
+
+        // Verify ho gaya?
+        const stored = localStorage.getItem("token");
+        console.log("=== STORED TOKEN ===", stored ? "YES ✅" : "NO ❌");
+
+        if (stored) {
+          setUserData({ email: "", password: "" });
+          navigate("/", { replace: true });
+        } else {
+          setError(
+            "Token store nahi hua localStorage mein — browser settings check karo",
+          );
+        }
       } else {
-        setError(res.data.message || "Login failed. Please try again.");
+        setError(
+          `Login failed: ${res.data.message || "Unknown error"} | success: ${res.data.success} | token: ${res.data.token ? "present" : "MISSING"}`,
+        );
       }
     } catch (err) {
-      const msg =
-        err.response?.data?.message || "Server error. Please try again.";
-      setError(msg);
+      const msg = err.response?.data?.message || err.message || "Network error";
+      setError(`Error: ${msg}`);
       console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Enter key se bhi login ho
   const handleKeyDown = (e) => {
     if (e.key === "Enter") HandleLogin();
   };
 
-  // =======================
-  // UI RENDER
-  // =======================
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-50">
-      <div className="lg:w-120 w-11/12 max-w-md bg-zinc-300 rounded-2xl flex flex-col justify-start gap-8 p-10 items-center shadow-xl">
-        {/* Header */}
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="w-11/12 max-w-md bg-zinc-300 rounded-2xl flex flex-col gap-6 p-10 items-center shadow-xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Welcome Back</h1>
           <p className="text-sm text-gray-500 mt-1">Login to your account</p>
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          {/* Error Message */}
+          {/* Error */}
           {error && (
-            <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2.5 rounded-xl text-sm font-medium">
+            <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2.5 rounded-xl text-sm font-medium break-all">
               ⚠️ {error}
             </div>
           )}
 
-          {/* EMAIL INPUT */}
+          {/* Debug info — server ka exact response */}
+          {debugInfo && (
+            <pre className="bg-gray-800 text-green-400 text-xs p-3 rounded-xl overflow-auto max-h-40 break-all whitespace-pre-wrap">
+              {debugInfo}
+            </pre>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-zinc-700">EMAIL</label>
             <input
@@ -93,7 +107,6 @@ const Login = () => {
             />
           </div>
 
-          {/* PASSWORD INPUT */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-zinc-700">
               PASSWORD
@@ -110,7 +123,6 @@ const Login = () => {
             />
           </div>
 
-          {/* LOGIN BUTTON */}
           <button
             onClick={HandleLogin}
             disabled={loading}
@@ -120,7 +132,6 @@ const Login = () => {
           </button>
         </div>
 
-        {/* SIGNUP LINK */}
         <p className="text-sm text-gray-600">
           Don't have an account?{" "}
           <Link
