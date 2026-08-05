@@ -1,49 +1,64 @@
-// import React from "react";
 import { Navigate } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
+
+// =======================
+// COMPONENT: PROTECTED ROUTE
+// =======================
 const Protected = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
+
   useEffect(() => {
-    console.log("useEffect running");
     const checkAuth = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    
-    if (!token) {
-      setIsAuth(false);
-      setLoading(false);
-      return;
-    }
+      try {
+        // Cookie automatically jaayegi withCredentials: true se
+        // Token bhi header mein bhej rahe hain fallback ke liye
+        const token = localStorage.getItem("token");
 
-    const res = await axios.get(
-      "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+        const res = await axios.get(
+          "https://fullstacktodoapp-production-2b2e.up.railway.app/auth/me",
+          {
+            withCredentials: true,
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
+        );
+
+        if (res.data.success) {
+          setIsAuth(true);
+        } else {
+          setIsAuth(false);
+        }
+      } catch (error) {
+        // 401 ya koi bhi error aaye — unauthorized samjho
+        console.error(
+          "Auth check failed:",
+          error?.response?.data?.message || error.message,
+        );
+        setIsAuth(false);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
 
-    if (res.data.success) {
-      setIsAuth(true);
-    }
-  } catch (error) {
-    setIsAuth(false);
-  } finally {
-    setLoading(false);
-  }
-};
     checkAuth();
   }, []);
 
-  // ⏳ jab tak check ho raha hai
-  if (loading) return <h2>Checking auth...</h2>;
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-gray-600 text-lg font-medium animate-pulse">
+          Verifying session...
+        </div>
+      </div>
+    );
+  }
 
-  // ❌ agar check ke baad bhi false
-  if (!isAuth) return <Navigate to="/login" />;
+  // Not authenticated
+  if (!isAuth) return <Navigate to="/login" replace />;
 
-  // ✅ allowed
+  // Authenticated
   return children;
 };
 

@@ -1,111 +1,64 @@
-// =======================
-// IMPORTS
-// =======================
-
-// import React from "react";
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClipboardList, FileText, PlusCircle } from "lucide-react";
 
 // =======================
+// AXIOS INSTANCE FACTORY
+// Har render pe fresh token lo
+// =======================
+const createApi = () => {
+  const token = localStorage.getItem("token");
+  return axios.create({
+    baseURL: "https://fullstacktodoapp-production-2b2e.up.railway.app",
+    withCredentials: true, // Cookie bhi saath jaayegi
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+};
+
+// =======================
 // COMPONENT: ADD TASK
 // =======================
-
 const AddTask = () => {
-  // =======================
-  // NAVIGATION
-  // =======================
-
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-  // =======================
-  // API CONFIGURATION
-  // =======================
+  const [taskData, setTaskData] = useState({ title: "", description: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const api = axios.create({
-    baseURL: "https://fullstacktodoapp-production-2b2e.up.railway.app",
-    withCredentials: true,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  // =======================
-  // STATE MANAGEMENT
-  // =======================
-
-  const [taskData, setTaskData] = useState({
-    title: "",
-    description: "",
-  });
-
-  // Destructuring state values
   const { title, description } = taskData;
 
-  // =======================
-  // HANDLERS
-  // =======================
-
   const handleAddTask = async () => {
-    // =======================
-    // VALIDATION
-    // =======================
+    setError("");
 
     if (!title.trim() || !description.trim()) {
-      alert("Please fill all fields");
-      return; // ⛔ stop execution
+      setError("Please fill in both title and description");
+      return;
     }
 
+    setLoading(true);
     try {
-      // =======================
-      // API CALL: CREATE TASK
-      // =======================
-
-      await api.post("/add-task", {
-        title: title,
-        description: description,
-      });
-      // =======================
-      // RESET STATE
-      // =======================
-
+      const api = createApi();
+      await api.post("/add-task", { title, description });
       setTaskData({ title: "", description: "" });
-
-      // =======================
-      // REDIRECT TO HOME
-      // =======================
-
       navigate("/");
     } catch (error) {
-      // =======================
-      // ERROR HANDLING
-      // =======================
-
-      console.log(error);
+      const msg =
+        error.response?.data?.message ||
+        "Failed to add task. Please try again.";
+      setError(msg);
+      console.error("Add task error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   // =======================
   // UI RENDER
   // =======================
-
   return (
-    // =======================
-    // MAIN CONTAINER
-    // =======================
-
     <div className="w-full flex justify-center px-4 pb-10">
-      {/* =======================
-          CARD CONTAINER
-      ======================= */}
-      <div
-        className="w-full max-w-md bg-white rounded-2xl mt-8 p-6
-        flex flex-col gap-5 shadow-xl shadow-black/30 h-fit"
-      >
-        {/* =======================
-            HEADER
-        ======================= */}
+      <div className="w-full max-w-md bg-white rounded-2xl mt-8 p-6 flex flex-col gap-5 shadow-xl shadow-black/30 h-fit">
+        {/* HEADER */}
         <div className="flex items-center gap-2 mb-1">
           <div className="bg-gray-800 p-2 rounded-xl">
             <ClipboardList className="text-white" size={20} />
@@ -113,9 +66,14 @@ const AddTask = () => {
           <h1 className="text-xl font-bold text-gray-800">New Task</h1>
         </div>
 
-        {/* =======================
-            TITLE INPUT
-        ======================= */}
+        {/* ERROR MESSAGE */}
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2.5 rounded-xl text-sm font-medium">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* TITLE INPUT */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-gray-500 flex items-center gap-1.5">
             <ClipboardList size={14} />
@@ -133,9 +91,7 @@ const AddTask = () => {
           />
         </div>
 
-        {/* =======================
-            DESCRIPTION INPUT
-        ======================= */}
+        {/* DESCRIPTION INPUT */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-gray-500 flex items-center gap-1.5">
             <FileText size={14} />
@@ -147,28 +103,23 @@ const AddTask = () => {
               setTaskData({ ...taskData, description: e.target.value })
             }
             name="description"
-            placeholder="enter Task description here"
+            placeholder="Enter task description here"
             value={description}
-          ></textarea>
+          />
         </div>
 
-        {/* =======================
-            SUBMIT BUTTON
-        ======================= */}
+        {/* SUBMIT BUTTON */}
         <button
           onClick={handleAddTask}
-          className="bg-gray-800 hover:bg-gray-700 active:scale-[0.98] transition-all px-6 py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 mt-2"
+          disabled={loading}
+          className="bg-gray-800 hover:bg-gray-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all px-6 py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 mt-2"
         >
           <PlusCircle size={18} />
-          Add New Task
+          {loading ? "Adding..." : "Add New Task"}
         </button>
       </div>
     </div>
   );
 };
-
-// =======================
-// EXPORT COMPONENT
-// =======================
 
 export default AddTask;

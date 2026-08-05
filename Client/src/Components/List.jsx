@@ -1,33 +1,41 @@
-// =======================
-// IMPORTS
-// =======================
 import axios from "axios";
 import { SquarePen, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const BASE_URL = "https://fullstacktodoapp-production-2b2e.up.railway.app";
+
+// Har call ke waqt fresh token lo
+const getApi = () => {
+  const token = localStorage.getItem("token");
+  return axios.create({
+    baseURL: BASE_URL,
+    withCredentials: true,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+};
+
 // =======================
 // COMPONENT: LIST
 // =======================
 const List = () => {
-  // =======================
-  // STATE MANAGEMENT
-  // =======================
   const [selectedTask, setSelectedTask] = useState([]);
   const [taskData, setTaskData] = useState([]);
-  const api = axios.create({
-    baseURL: "https://fullstacktodoapp-production-2b2e.up.railway.app",
-    withCredentials: true,
-  });
+  const [fetchError, setFetchError] = useState("");
+
   // =======================
   // FETCH ALL TASKS
   // =======================
   const getListData = async () => {
     try {
-      const list = await api.get("/tasks");
-      setTaskData(list.data);
+      setFetchError("");
+      const api = getApi();
+      const res = await api.get("/tasks");
+      setTaskData(res.data);
     } catch (error) {
-      console.error("Error fetching tasks:", error);
+      const msg = error.response?.data?.message || "Failed to load tasks";
+      setFetchError(msg);
+      console.error("Fetch tasks error:", error);
     }
   };
 
@@ -35,11 +43,14 @@ const List = () => {
   // DELETE ALL TASKS
   // =======================
   const deleteAll = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL tasks?")) return;
     try {
+      const api = getApi();
       await api.delete("/delete-all");
       getListData();
     } catch (error) {
-      console.error("Error deleting all tasks:", error);
+      console.error("Delete all error:", error);
+      alert(error.response?.data?.message || "Failed to delete all tasks");
     }
   };
 
@@ -48,10 +59,12 @@ const List = () => {
   // =======================
   const deleteTaskById = async (id) => {
     try {
+      const api = getApi();
       await api.delete(`/delete-task/${id}`);
       getListData();
     } catch (error) {
-      console.error("Error deleting task:", error);
+      console.error("Delete task error:", error);
+      alert(error.response?.data?.message || "Failed to delete task");
     }
   };
 
@@ -60,8 +73,7 @@ const List = () => {
   // =======================
   const selectAll = (event) => {
     if (event.target.checked) {
-      let items = taskData.map((item) => item._id);
-      setSelectedTask(items);
+      setSelectedTask(taskData.map((item) => item._id));
     } else {
       setSelectedTask([]);
     }
@@ -71,58 +83,53 @@ const List = () => {
   // SELECT SINGLE TASK
   // =======================
   const selectSingleItem = (id) => {
-    setSelectedTask((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+    setSelectedTask((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
   };
 
   // =======================
   // DELETE MULTIPLE TASKS
   // =======================
-  const DeleteSelected = async () => {
-    await api.delete("/multipleDelete", {
-      data: { ids: selectedTask },
-    });
-
-    // Small delay before refreshing list
-    setTimeout(() => {
-      getListData();
-      setSelectedTask([]);
-    }, 40);
+  const deleteSelected = async () => {
+    if (!window.confirm(`Delete ${selectedTask.length} selected task(s)?`))
+      return;
+    try {
+      const api = getApi();
+      await api.delete("/multipleDelete", {
+        data: { ids: selectedTask },
+      });
+      setTimeout(() => {
+        getListData();
+        setSelectedTask([]);
+      }, 40);
+    } catch (error) {
+      console.error("Multiple delete error:", error);
+      alert(error.response?.data?.message || "Failed to delete selected tasks");
+    }
   };
 
-  // =======================
-  // EFFECTS
-  // =======================
-
-  // Fetch tasks (⚠️ note: dependency issue here)
   useEffect(() => {
     getListData();
   }, []);
-
-  // Debug selected items
-  useEffect(() => {
-    console.log(selectedTask);
-  }, [selectedTask]);
 
   // =======================
   // UI RENDER
   // =======================
   return (
-    <div className="flex flex-col items-center gap-10 justify-center p-4 ">
-      {/* =======================
-          TABLE CONTAINER
-      ======================= */}
+    <div className="flex flex-col items-center gap-6 justify-center p-4">
+      {/* ERROR MESSAGE */}
+      {fetchError && (
+        <div className="w-full max-w-5xl bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+          ❌ {fetchError}
+        </div>
+      )}
+
+      {/* TABLE CONTAINER */}
       <div className="w-full max-w-5xl bg-zinc-100 rounded-xl shadow-2xl shadow-zinc-400 border border-zinc-200 overflow-hidden mt-5">
         <div className="overflow-x-auto w-full">
-          <div className="min-w-175 p-5">
-            {/* =======================
-                TABLE HEADER
-            ======================= */}
+          <div className="min-w-[700px] p-5">
+            {/* TABLE HEADER */}
             <div className="grid grid-cols-[50px_60px_1fr_2fr_80px] gap-3 font-sans mb-3 items-center">
               <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl flex justify-center items-center">
                 <input
@@ -135,23 +142,21 @@ const List = () => {
                   className="w-4 h-4 cursor-pointer accent-indigo-600"
                 />
               </div>
-              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-center">
+              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-center text-sm font-semibold">
                 S.No
               </div>
-              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl">
+              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-sm font-semibold">
                 Title
               </div>
-              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl">
+              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-sm font-semibold">
                 Description
               </div>
-              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-center">
+              <div className="p-2.5 border border-zinc-300 bg-zinc-200 rounded-xl text-center text-sm font-semibold">
                 Actions
               </div>
             </div>
 
-            {/* =======================
-                TABLE BODY
-            ======================= */}
+            {/* TABLE BODY */}
             <div className="flex flex-col gap-3">
               {taskData && taskData.length > 0 ? (
                 taskData.map((item, index) => (
@@ -170,35 +175,36 @@ const List = () => {
                     </div>
 
                     {/* Index */}
-                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl text-center">
+                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl text-center text-sm">
                       {index + 1}
                     </div>
 
                     {/* Title */}
-                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl truncate">
+                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl truncate text-sm">
                       {item.title}
                     </div>
 
                     {/* Description */}
-                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl whitespace-normal max-h-28 overflow-y-auto">
+                    <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl whitespace-normal max-h-28 overflow-y-auto text-sm">
                       {item.description}
                     </div>
 
                     {/* Actions */}
                     <div className="p-2.5 border border-zinc-200 bg-zinc-50 rounded-xl flex gap-3 items-center justify-center">
-                      {/* Delete */}
                       <span
                         onClick={() => deleteTaskById(item._id)}
-                        className="p-1 rounded hover:bg-red-500 hover:scale-110 cursor-pointer group"
+                        className="p-1 rounded hover:bg-red-500 hover:scale-110 cursor-pointer group transition-all"
+                        title="Delete task"
                       >
                         <Trash2
                           size={18}
                           className="text-red-500 group-hover:text-white"
                         />
                       </span>
-
-                      {/* Edit */}
-                      <span className="p-1 rounded hover:bg-blue-500 hover:scale-110 cursor-pointer group">
+                      <span
+                        className="p-1 rounded hover:bg-blue-500 hover:scale-110 cursor-pointer group transition-all"
+                        title="Edit task"
+                      >
                         <Link to={`/update-task/${item._id}`}>
                           <SquarePen
                             size={18}
@@ -210,8 +216,10 @@ const List = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-zinc-500 font-medium">
-                  No tasks found.
+                <div className="text-center py-10 text-zinc-500 font-medium">
+                  {fetchError
+                    ? "Could not load tasks."
+                    : "No tasks yet. Add your first task!"}
                 </div>
               )}
             </div>
@@ -219,29 +227,25 @@ const List = () => {
         </div>
       </div>
 
-      {/* =======================
-          BULK DELETE BUTTON
-      ======================= */}
-      <div>
-        {selectedTask.length > 0 && (
-          <button
-            onClick={DeleteSelected}
-            className="bg-red-500 px-4 py-4 rounded-2xl text-white text-lg font-medium hover:scale-105 active:scale-95 shadow-lg"
-          >
-            Delete Selected
-          </button>
-        )}
-      </div>
+      {/* BULK DELETE BUTTON */}
+      {selectedTask.length > 0 && (
+        <button
+          onClick={deleteSelected}
+          className="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-2xl text-white text-base font-semibold hover:scale-105 active:scale-95 shadow-lg transition-all"
+        >
+          Delete Selected ({selectedTask.length})
+        </button>
+      )}
 
-      {/* =======================
-          CLEAR ALL BUTTON
-      ======================= */}
-      <button
-        onClick={deleteAll}
-        className="bg-gray-800 hover:bg-gray-700 px-8 py-4 rounded-2xl text-white text-lg font-medium hover:scale-105 active:scale-95 shadow-lg"
-      >
-        CLEAR ALL
-      </button>
+      {/* CLEAR ALL BUTTON */}
+      {taskData.length > 0 && (
+        <button
+          onClick={deleteAll}
+          className="bg-gray-800 hover:bg-gray-700 px-8 py-3 rounded-2xl text-white text-base font-semibold hover:scale-105 active:scale-95 shadow-lg transition-all"
+        >
+          Clear All Tasks
+        </button>
+      )}
     </div>
   );
 };
