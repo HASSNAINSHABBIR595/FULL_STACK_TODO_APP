@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // =======================
-// CORS CONFIGURATION
+// CORS — trailing slash nahi, exact origins
 // =======================
 const allowedOrigins = [
   "http://localhost:5173",
@@ -39,33 +39,35 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (Postman, mobile apps, etc.)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error("Not allowed by CORS"));
+      if (!origin) return callback(null, true); // Postman/curl allow
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS: Origin not allowed — " + origin));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 await connection();
 
 // =======================
 // JWT VERIFY MIDDLEWARE
+// Priority: Authorization header > cookie
+// (httpOnly cookie cross-site mein reliable nahi, header se lo)
 // =======================
 function VerifyJWTToken(req, res, next) {
-  // Token ko pehle cookie se lo, phir Authorization header se
-  let token = req.cookies?.token;
+  let token = null;
 
-  if (!token) {
-    const authHeader = req.headers?.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-    }
+  // 1. Authorization header check karo (primary)
+  const authHeader = req.headers?.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // 2. Fallback: cookie se lo
+  if (!token && req.cookies?.token) {
+    token = req.cookies.token;
   }
 
   if (!token) {
@@ -107,31 +109,35 @@ app.post("/signup", async (req, res) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "User already exists with this email",
+        message: "Account already exists with this email",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await Users.create({ name, email, password: hashedPassword });
+    const newUser = await Users.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
 
     const token = jwt.sign(
       { id: newUser._id, email: newUser.email },
       process.env.JWT_SECRET,
-      { expiresIn: "5d" }
+      { expiresIn: "5d" },
     );
 
-    // Production mein secure cookie set karo
+    // Cookie — same-site ke liye, cross-site ke liye header use hoga
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,        // HTTPS ke liye zaroori
-      sameSite: "none",    // Cross-site cookies ke liye
-      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
+      secure: true,
+      sameSite: "none",
+      maxAge: 5 * 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
       success: true,
       message: "Account created successfully",
-      token: token, // Frontend ke liye bhi de rahe hain (fallback)
+      token: token, // Frontend localStorage mein store karega
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -174,7 +180,7 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "5d" }
+      { expiresIn: "5d" },
     );
 
     res.cookie("token", token, {
@@ -187,7 +193,7 @@ app.post("/login", async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Login successful",
-      token: token, // Frontend ke liye bhi bhej rahe hain
+      token: token, // Frontend localStorage mein store karega
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -209,17 +215,12 @@ app.post("/logout", (req, res) => {
   res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
-// AUTH CHECK
-app.get("/auth/me", VerifyJWTToken, async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      user: req.user,
-    });
-  } catch (err) {
-    console.error("Auth check error:", err);
-    res.status(500).json({ success: false, message: "Auth check failed" });
-  }
+// AUTH CHECK — token Authorization header se aayega
+app.get("/auth/me", VerifyJWTToken, (req, res) => {
+  res.status(200).json({
+    success: true,
+    user: req.user,
+  });
 });
 
 // =======================
@@ -230,28 +231,25 @@ app.get("/auth/me", VerifyJWTToken, async (req, res) => {
 app.post("/add-task", VerifyJWTToken, async (req, res) => {
   try {
     const { title, description } = req.body;
-
     if (!title || !description) {
       return res.status(400).json({
         success: false,
         message: "Title and description are required",
       });
     }
-
-    const newTask = await Task.create({ title, description, userId: req.user.id });
-
-    res.status(201).json({
-      success: true,
-      message: "Task added successfully",
-      data: newTask,
-    });
+    const newTask = await Task.create({ title, description });
+    res
+      .status(201)
+      .json({ success: true, message: "Task added", data: newTask });
   } catch (error) {
     console.error("Add task error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error adding task",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error adding task",
+        error: error.message,
+      });
   }
 });
 
@@ -262,11 +260,13 @@ app.get("/tasks", VerifyJWTToken, async (req, res) => {
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Fetch tasks error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching tasks",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching tasks",
+        error: error.message,
+      });
   }
 });
 
@@ -274,70 +274,67 @@ app.get("/tasks", VerifyJWTToken, async (req, res) => {
 app.get("/tasks/:id", async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ success: false, message: "Task not found" });
-    }
-
+    if (!task)
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
     res.status(200).json(task);
   } catch (error) {
     console.error("Fetch single task error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching task",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching task",
+        error: error.message,
+      });
   }
 });
 
 // UPDATE TASK
 app.put("/update-task/:id", async (req, res) => {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedTask) {
-      return res.status(404).json({ success: false, message: "Task not found" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Task updated successfully",
-      data: updatedTask,
+    const updated = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
     });
+    if (!updated)
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    res
+      .status(200)
+      .json({ success: true, message: "Task updated", data: updated });
   } catch (error) {
     console.error("Update task error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating task",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error updating task",
+        error: error.message,
+      });
   }
 });
 
 // DELETE SINGLE TASK
 app.delete("/delete-task/:id", async (req, res) => {
   try {
-    const deletedTask = await Task.findByIdAndDelete(req.params.id);
-
-    if (!deletedTask) {
-      return res.status(404).json({ success: false, message: "Task not found" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Task deleted successfully",
-    });
+    const deleted = await Task.findByIdAndDelete(req.params.id);
+    if (!deleted)
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    res.status(200).json({ success: true, message: "Task deleted" });
   } catch (error) {
     console.error("Delete task error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting task",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error deleting task",
+        error: error.message,
+      });
   }
 });
 
@@ -345,27 +342,24 @@ app.delete("/delete-task/:id", async (req, res) => {
 app.delete("/multipleDelete", async (req, res) => {
   try {
     const { ids } = req.body;
-
     if (!ids || ids.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No task IDs provided",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "No IDs provided" });
     }
-
     await Task.deleteMany({ _id: { $in: ids } });
-
-    res.status(200).json({
-      success: true,
-      message: `${ids.length} tasks deleted successfully`,
-    });
+    res
+      .status(200)
+      .json({ success: true, message: `${ids.length} tasks deleted` });
   } catch (err) {
     console.error("Multiple delete error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting tasks",
-      error: err.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error deleting tasks",
+        error: err.message,
+      });
   }
 });
 
@@ -373,17 +367,16 @@ app.delete("/multipleDelete", async (req, res) => {
 app.delete("/delete-all", async (req, res) => {
   try {
     await Task.deleteMany({});
-    res.status(200).json({
-      success: true,
-      message: "All tasks deleted successfully",
-    });
+    res.status(200).json({ success: true, message: "All tasks deleted" });
   } catch (error) {
     console.error("Delete all error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting all tasks",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error deleting all tasks",
+        error: error.message,
+      });
   }
 });
 
