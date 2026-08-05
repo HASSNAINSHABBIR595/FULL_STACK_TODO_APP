@@ -5,18 +5,21 @@ import { useEffect, useState, useRef } from "react";
 const Protected = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
-  // Ref se ensure karo — sirf ek baar check ho, loop na bane
   const checked = useRef(false);
 
   useEffect(() => {
-    // Already checked? Skip karo — strict mode double-invoke se bachao
     if (checked.current) return;
     checked.current = true;
 
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
 
-      // Token hi nahi hai localStorage mein? Direct redirect
+      console.log(
+        "=== PROTECTED: token in localStorage ===",
+        token ? "EXISTS ✅" : "MISSING ❌",
+      );
+
+      // Token hi nahi — seedha redirect
       if (!token) {
         setIsAuth(false);
         setLoading(false);
@@ -31,20 +34,38 @@ const Protected = ({ children }) => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            // Railway cold start ke liye timeout thoda zyada
+            timeout: 15000,
           },
         );
 
-        setIsAuth(res.data.success === true);
-      } catch (error) {
-        console.error(
-          "Auth check failed:",
-          error?.response?.data?.message || error.message,
-        );
-        // 401 aaye to token expire/invalid — clear karo
-        if (error?.response?.status === 401) {
+        console.log("=== AUTH/ME RESPONSE ===", res.data);
+
+        if (res.data.success === true) {
+          setIsAuth(true);
+        } else {
+          // success: false aaya — token invalid hai
+          // Token sirf tab hataao jab server ne explicitly reject kiya
           localStorage.removeItem("token");
+          setIsAuth(false);
         }
-        setIsAuth(false);
+      } catch (error) {
+        const status = error?.response?.status;
+        const msg = error?.response?.data?.message || error.message;
+        console.error("=== AUTH CHECK ERROR ===", { status, msg });
+
+        if (status === 401) {
+          // Server ne explicitly bola — invalid token, hataao
+          console.log("401 received — removing token");
+          localStorage.removeItem("token");
+          setIsAuth(false);
+        } else {
+          // Network error, timeout, Railway cold start, 500, etc.
+          // Token mat hataao — user ka data safe rakho
+          // Token hai localStorage mein toh assume karo valid hai
+          console.log("Network/server error — keeping token, allowing access");
+          setIsAuth(true);
+        }
       } finally {
         setLoading(false);
       }
