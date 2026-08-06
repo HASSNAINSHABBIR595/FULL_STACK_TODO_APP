@@ -46,7 +46,7 @@ const Protected = ({ children }) => {
         } else {
           // success: false aaya — token invalid hai
           // Token sirf tab hataao jab server ne explicitly reject kiya
-          localStorage.removeItem("token");
+          // localStorage.removeItem("token");
           setIsAuth(false);
         }
       } catch (error) {
